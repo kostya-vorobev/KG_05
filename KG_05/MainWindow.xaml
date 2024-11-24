@@ -21,10 +21,10 @@
         <StackPanel Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,10,0" Grid.Column="2" Height="282" Width="200">
             <Button Content="Загрузить изображение" Click="LoadImage_Click" Width="200" Height="30"/>
             <Label Content="Яркость" />
-            <Slider Name="brightnessSlider" Minimum="-128" Maximum="127" Value="0" TickFrequency="10" 
+            <Slider Name="brightnessSlider" Minimum="-256" Maximum="256" Value="0" TickFrequency="10" 
                     LargeChange="10" SmallChange="1" ValueChanged="BrightnessSlider_ValueChanged" Width="200" />
             <Label Content="Контрастность" />
-            <Slider Name="contrastSlider" Minimum="-128" Maximum="127" Value="0" TickFrequency="10" 
+            <Slider Name="contrastSlider" Minimum="-256" Maximum="256" Value="0" TickFrequency="10" 
                     LargeChange="10" SmallChange="1" ValueChanged="ContrastSlider_ValueChanged" Width="200" />
             <Label Content="Порог для бинаризации" />
             <Slider Name="thresholdSlider" Minimum="0" Maximum="255" Value="128" TickFrequency="10" 
