@@ -23,7 +23,7 @@ namespace KG_05
         {
             // Загрузка изображения через диалоговое окно
             OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
+            dialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;";
             if (dialog.ShowDialog() == true)
             {
                 _originalBitmap = new BitmapImage(new Uri(dialog.FileName));
@@ -103,30 +103,38 @@ namespace KG_05
             // Изменение яркости изображения
             if (_originalBitmap != null)
             {
-                _currentBitmap = AdjustBrightness(_currentBitmap, (int)brightnessSlider.Value);
+                _currentBitmap = AdjustBrightness(_originalBitmap, brightnessSlider.Value);
                 imageDisplay.Source = _currentBitmap;
                 UpdateHistogram();
             }
         }
 
-        private BitmapSource AdjustBrightness(BitmapSource bitmap, double adjustment)
+        private BitmapSource AdjustBrightness(BitmapSource bitmap, double changeValue)
         {
-            // Регулировка яркости изображения
             int width = bitmap.PixelWidth;
             int height = bitmap.PixelHeight;
             int stride = width * (bitmap.Format.BitsPerPixel / 8);
             byte[] pixelData = new byte[height * stride];
             bitmap.CopyPixels(pixelData, stride, 0);
 
-            // Применение изменений яркости
             for (int i = 0; i < pixelData.Length; i += 4)
             {
-                pixelData[i] = Clamp((byte)(pixelData[i] + adjustment));         // Blue
-                pixelData[i + 1] = Clamp((byte)(pixelData[i + 1] + adjustment)); // Green
-                pixelData[i + 2] = Clamp((byte)(pixelData[i + 2] + adjustment)); // Red
+                // Изменение яркости для RGB компонент
+                for (int j = 0; j < 3; j++) // j = 0 для Blue, j = 1 для Green, j = 2 для Red
+                {
+                    double newValue = ClampDouble((double)pixelData[i + j] + changeValue);
+                    // Заносим в пиксель ограниченное значение от 0 до 255
+                    pixelData[i + j] = (byte)newValue;
+                }
+                // Альфа-канал остается неизменным
             }
 
             return BitmapSource.Create(width, height, bitmap.DpiX, bitmap.DpiY, bitmap.Format, bitmap.Palette, pixelData, stride);
+        }
+        private double ClampDouble(double value)
+        {
+            // Ограничение значения в пределах 0-255
+            return Math.Max(0, Math.Min(255, value));
         }
 
         private void ContrastSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -134,7 +142,7 @@ namespace KG_05
             // Изменение контрастности изображения
             if (_originalBitmap != null)
             {
-                _currentBitmap = AdjustContrast(_currentBitmap, contrastSlider.Value);
+                _currentBitmap = AdjustContrast(_originalBitmap, contrastSlider.Value);
                 imageDisplay.Source = _currentBitmap;
                 UpdateHistogram();
             }
@@ -142,7 +150,6 @@ namespace KG_05
 
         private BitmapSource AdjustContrast(BitmapSource bitmap, double adjustment)
         {
-            // Регулировка контрастности изображения
             int width = bitmap.PixelWidth;
             int height = bitmap.PixelHeight;
             int stride = width * (bitmap.Format.BitsPerPixel / 8);
@@ -155,17 +162,19 @@ namespace KG_05
             // Применение изменений контрастности
             for (int i = 0; i < pixelData.Length; i += 4)
             {
-                pixelData[i] = Clamp((byte)(factor * (pixelData[i] - averageGray) + averageGray));         // Blue
-                pixelData[i + 1] = Clamp((byte)(factor * (pixelData[i + 1] - averageGray) + averageGray)); // Green
-                pixelData[i + 2] = Clamp((byte)(factor * (pixelData[i + 2] - averageGray) + averageGray)); // Red
+                for (int j = 0; j < 3; j++) // j = 0 для Blue, j = 1 для Green, j = 2 для Red
+                {
+                    double newValue = factor * (pixelData[i + j] - averageGray) + averageGray;
+                    pixelData[i + j] = (byte)ClampDouble(newValue); // Используем ClampDouble для ограничения
+                }
             }
 
             return BitmapSource.Create(width, height, bitmap.DpiX, bitmap.DpiY, bitmap.Format, bitmap.Palette, pixelData, stride);
+
         }
 
         private double CalculateAverageBrightness(BitmapSource bitmap)
         {
-            // Расчёт средней яркости изображения
             int width = bitmap.PixelWidth;
             int height = bitmap.PixelHeight;
             int stride = width * (bitmap.Format.BitsPerPixel / 8);
@@ -174,10 +183,9 @@ namespace KG_05
 
             double totalBrightness = 0;
 
-            // Суммирование яркости
             for (int i = 0; i < pixelData.Length; i += 4)
             {
-                totalBrightness += (.299 * pixelData[i + 2] + .587 * pixelData[i + 1] + .114 * pixelData[i]);
+                totalBrightness += (.299 * pixelData[i + 2] + .587 * pixelData[i + 1] + .114 * pixelData[i]); // RGB
             }
 
             return totalBrightness / (width * height); // Возврат средней яркости
@@ -295,7 +303,7 @@ namespace KG_05
         private byte Clamp(byte value)
         {
             // Ограничение значения в пределах 0-255
-            return (byte)Math.Max(0, Math.Min(255, (int)value));
+            return (byte)Math.Max((byte)0, Math.Min((byte)255, value));
         }
 
         private void ConvertToBinary_Click(object sender, RoutedEventArgs e)
